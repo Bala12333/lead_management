@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  // Relationships
+  assignedLeads Lead[]
+}
+
+model Lead {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String
+  source      String   // E.g. WhatsApp, Form, Facebook
+  status      String   @default("New Lead")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // SLA tracking
+  slaBreached Boolean  @default(false)
+  firstRespondedAt DateTime?
+
+  // Assigned Agent
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id])
+
+  // Relationships
+  interactions Interaction[]
+  visits       Visit[]
+  followUps    FollowUp[]
+}
+
+model Interaction {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  type      String   // System Note, Message sent, Message received
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Visit {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  property    String
+  visitDate   DateTime
+  staffName   String
+  outcome     String?  // Booked, Considering, Not Interested
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FollowUp {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  remindAt    DateTime
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
